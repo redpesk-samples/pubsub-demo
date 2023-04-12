@@ -8,6 +8,7 @@
 #include <utility>
 
 #include <json-c/json.h>
+#include "wrap-json.h"
 
 #define AFB_BINDING_VERSION 4
 #include <afb/afb-binding>
@@ -20,14 +21,17 @@
 
 afb::event data_event;
 afb_timer_t timer;
-std::vector<Data> data;
 
 // Structure to hold time and value data
 struct Data
 {
-	std::string time;
-	double value;
+	int time;
+	int value;
 };
+
+std::vector<Data> data_csv;
+int data_csv_len = 0;
+int current_data_csv = 0;
 
 // Function to read CSV file
 std::vector<Data> readCSV(const std::string &filename)
@@ -41,18 +45,15 @@ std::vector<Data> readCSV(const std::string &filename)
 		while (std::getline(file, line))
 		{
 			std::istringstream iss(line);
-			std::string time, valueStr;
-			double value;
+			std::string timeStr, valueStr;
+			int time, value;
 			// Parse time and value from CSV line
-			if (std::getline(iss, time, ',') && std::getline(iss, valueStr, ','))
+			if (std::getline(iss, timeStr, ';') && std::getline(iss, valueStr, ';'))
 			{
-				// Convert value from string to double
-				std::stringstream ss(valueStr);
-				ss >> value;
 				// Create Data struct and add to vector
 				Data d;
-				d.time = time;
-				d.value = value;
+				d.time = std::stoi(timeStr);
+				d.value = std::stoi(valueStr);
 				data.push_back(d);
 			}
 		}
@@ -60,7 +61,7 @@ std::vector<Data> readCSV(const std::string &filename)
 	}
 	else
 	{
-		std::cout << "Failed to open file: " << filename << std::endl;
+		AFB_ERROR("Failed to open file CSV");
 	}
 	return data;
 }
@@ -110,9 +111,23 @@ void send_data(void)
 
 void timed_event(afb_timer_t timer, void *closure, int decount)
 {
-	AFB_ERROR("timer");
 	afb::dataset<1> a;
-	a[0] = json_to_req_data(NULL, json_object_new_string("ok"));
+
+	Data da = data_csv.at(current_data_csv);
+	current_data_csv++;
+	if (current_data_csv >= data_csv_len)
+	{
+		current_data_csv = 0;
+	}
+
+	json_object *obj;
+
+	// create event data_csv
+	wrap_json_pack(&obj, "{si si}",
+				   "timestamp", da.time,
+				   "value", da.value);
+
+	a[0] = json_to_req_data(NULL, obj);
 	data_event.push(a);
 }
 
@@ -123,7 +138,13 @@ void subscribe(afb::req req, afb::received_data params)
 	req.subscribe(data_event);
 	req.reply();
 
-	data = readCSV("fic.csv");
+	data_csv = readCSV("fic.csv");
+	data_csv_len = data_csv.size();
+	if (data_csv_len == 0)
+	{
+		return;
+	}
+
 	// first = std::thread(send_data)
 
 	afb_timer_create(&timer,
