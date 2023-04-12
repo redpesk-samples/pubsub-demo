@@ -129,8 +129,8 @@ int mainctl(afb_api_t api, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *userdat
 	if (ctlid == afb_ctlid_Init)
 	{
 		AFB_NOTICE("init");
-		afb_api_require_api(api, "release", 1);
-		afb_api_require_api(api, "shadow", 1);
+		afb_api_require_api(api, "release", 0);
+		afb_api_require_api(api, "shadow", 0);
 		afb_api_call_sync(api, "shadow", "subscribe", NULL, NULL, NULL, NULL, NULL);
 		afb_api_call_sync(api, "release", "subscribe", NULL, NULL, NULL, NULL, NULL);
 		afb_api_event_handler_add(api, "shadow/data_event", dispatch_shadow, NULL);
