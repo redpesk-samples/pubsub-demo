@@ -41,7 +41,8 @@
 
 #include <json-c/json.h>
 
-struct ShadowData {
+struct ShadowData
+{
 	int timestamp;
 	int value;
 };
@@ -53,8 +54,9 @@ json_object *json_of_data(const afb::data &d)
 {
 	json_object *r = nullptr;
 	afb::data j(afb::type_json_c(), d);
-	if (j) {
-		r = reinterpret_cast<json_object*>(const_cast<void*>(*j));
+	if (j)
+	{
+		r = reinterpret_cast<json_object *>(const_cast<void *>(*j));
 		r = json_object_get(r);
 	}
 	return r;
@@ -65,18 +67,17 @@ json_object *json_of_data(std::pair<unsigned, afb_data_t const *> dataset, unsig
 	return index < dataset.first ? json_of_data(dataset.second[index]) : nullptr;
 }
 
-
 static std::mutex mutex;
 
 /**************************************************************************/
 
-static struct ShadowData dispatch(unsigned n, afb_data_t const a[]) 
+static struct ShadowData dispatch(unsigned n, afb_data_t const a[])
 {
 	struct json_object *r;
 	struct json_object *jtimestamp, *jvalue;
-	struct ShadowData data; 
-	
-	afb::received_data params(n,a);
+	struct ShadowData data;
+
+	afb::received_data params(n, a);
 	r = json_of_data(params[0]);
 
 	json_object_object_get_ex(r, "timestamp", &jtimestamp);
@@ -87,29 +88,33 @@ static struct ShadowData dispatch(unsigned n, afb_data_t const a[])
 	return data;
 }
 
-static void dispatch_release(void *closure, const char *event, unsigned n, afb_data_t const a[], afb_api_t api) 
+static void dispatch_release(void *closure, const char *event, unsigned n, afb_data_t const a[], afb_api_t api)
 {
 	AFB_NOTICE("received released");
 	data_release.push_back(dispatch(n, a));
 }
 
-static void dispatch_shadow(void *closure, const char *event, unsigned n, afb_data_t const a[], afb_api_t api) 
+static void dispatch_shadow(void *closure, const char *event, unsigned n, afb_data_t const a[], afb_api_t api)
 {
 	AFB_NOTICE("received shadow");
 	const std::lock_guard<std::mutex> lock(mutex);
 	data_shadow.push_back(dispatch(n, a));
 
-	//simple compare for now: should received same values/same orders
-	while (data_shadow.size() > 0 || data_shadow.size() > 0) {
+	// simple compare for now: should received same values/same orders
+	while (data_shadow.size() > 0 || data_shadow.size() > 0)
+	{
 		int s_timestamp = data_shadow[0].timestamp;
 		int s_value = data_shadow[0].value;
 
 		int r_timestamp = data_release[0].timestamp;
 		int r_value = data_release[0].value;
-		
-		if (s_timestamp == r_timestamp && s_value == r_value) {
+
+		if (s_timestamp == r_timestamp && s_value == r_value)
+		{
 			AFB_NOTICE("same value %d %d", s_timestamp, s_value);
-		} else {
+		}
+		else
+		{
 			AFB_NOTICE("value differs (shadow=%d %d) != (release=%d %d)", s_timestamp, s_value, r_timestamp, r_value);
 		}
 		data_shadow.erase(data_shadow.begin());
@@ -121,7 +126,8 @@ int mainctl(afb_api_t api, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *userdat
 {
 	afb::api a(api);
 
-	if (ctlid == afb_ctlid_Init) {
+	if (ctlid == afb_ctlid_Init)
+	{
 		AFB_NOTICE("init");
 		afb_api_require_api(api, "release", 1);
 		afb_api_require_api(api, "shadow", 1);
@@ -134,8 +140,6 @@ int mainctl(afb_api_t api, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *userdat
 }
 
 const afb_verb_t verbs[] = {
-	afb::verbend()
-};
+	afb::verbend()};
 
 const afb_binding_t afbBindingExport = afb::binding("compare", verbs, "compare", mainctl);
-
