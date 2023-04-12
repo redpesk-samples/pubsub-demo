@@ -20,51 +20,6 @@
 #include <vector>
 
 afb::event data_event;
-afb_timer_t timer;
-
-// Structure to hold time and value data
-struct Data
-{
-	int time;
-	int value;
-};
-
-std::vector<Data> data_csv;
-int data_csv_len = 0;
-int current_data_csv = 0;
-
-// Function to read CSV file
-std::vector<Data> readCSV(const std::string &filename)
-{
-	std::vector<Data> data;
-	std::ifstream file(filename);
-	if (file.is_open())
-	{
-		std::string line;
-		// Read each line from CSV file
-		while (std::getline(file, line))
-		{
-			std::istringstream iss(line);
-			std::string timeStr, valueStr;
-			int time, value;
-			// Parse time and value from CSV line
-			if (std::getline(iss, timeStr, ';') && std::getline(iss, valueStr, ';'))
-			{
-				// Create Data struct and add to vector
-				Data d;
-				d.time = std::stoi(timeStr);
-				d.value = std::stoi(valueStr);
-				data.push_back(d);
-			}
-		}
-		file.close();
-	}
-	else
-	{
-		AFB_ERROR("Failed to open file CSV");
-	}
-	return data;
-}
 
 afb::data json_to_req_data(afb::req req, json_object *obj)
 {
@@ -74,30 +29,6 @@ afb::data json_to_req_data(afb::req req, json_object *obj)
 	return r;
 }
 
-void timed_event(afb_timer_t timer, void *closure, int decount)
-{
-	afb::dataset<1> a;
-
-	Data da = data_csv.at(current_data_csv);
-	current_data_csv++;
-	if (current_data_csv >= data_csv_len)
-	{
-		current_data_csv = 0;
-	}
-
-	json_object *obj;
-
-	AFB_NOTICE("Sending (timestamp %d - Value %d)", da.time, da.value);
-
-	// create event data_csv
-	wrap_json_pack(&obj, "{si si}",
-				   "timestamp", da.time,
-				   "value", da.value);
-
-	a[0] = json_to_req_data(NULL, obj);
-	data_event.push(a);
-}
-
 void subscribe(afb::req req, afb::received_data params)
 {
 	json_object *args, *val;
@@ -105,26 +36,26 @@ void subscribe(afb::req req, afb::received_data params)
 
 	req.subscribe(data_event);
 	req.reply();
-
-	data_csv = readCSV("fic.csv");
-	data_csv_len = data_csv.size();
-	if (data_csv_len == 0)
-	{
-		return;
-	}
-
-	afb_timer_create(&timer,
-					 /*start:*/ 0 /*relative*/, 1 /*sec*/, 0 /*msec*/,
-					 /*occur:*/ 0 /*infinite*/, 1000 /*period msec*/, 10 /*accuracy msec*/,
-					 /*action:*/ timed_event, data_event, 0 /*no unref*/);
 }
 
 void unsubscribe(afb::req req, afb::received_data params)
 {
-	afb_timer_unref(timer);
 	AFB_NOTICE("Unsubscribe");
 	req.unsubscribe(data_event);
 	req.reply();
+}
+
+void dispatch(void *closure, const char *event, unsigned n, afb_data_t const a[], afb_api_t api)
+{
+	struct json_object *r;
+	struct json_object *jtimestamp, *jvalue;
+
+	afb::received_data params(n, a);
+	r = json_of_data(params[0]);
+
+	afb::dataset<1> a;
+	a[0] = json_to_req_data(NULL, r);
+	data_event.push(a);
 }
 
 int mainctl(afb_api_t api, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *userdata)
@@ -140,6 +71,10 @@ int mainctl(afb_api_t api, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *userdat
 			AFB_ERROR("Can't create events");
 			return -1;
 		}
+
+		afb_api_require_api(api, "reader", 1);
+		afb_api_call_sync(api, "reader", "subscribe", NULL, NULL, NULL, NULL, NULL);
+		afb_api_event_handler_add(api, "reader/data_event", dispatch, NULL);
 	}
 	return 0;
 }
