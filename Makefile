@@ -14,10 +14,9 @@ CXXFLAGS += ${FLAGS} -fpermissive
 
 .PHONY: all clean
 
-tutos = tuto-1.so tuto-3.so
-samples = hello4.so hello4pp.so
+apps = release.so shadow.so
 
-all: sender.so
+all: ${apps}
 
 clean:
 	rm *.so 2>/dev/null || true

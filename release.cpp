@@ -66,47 +66,12 @@ std::vector<Data> readCSV(const std::string &filename)
 	return data;
 }
 
-json_object *json_of_data(const afb::data &d)
-{
-	json_object *r = nullptr;
-	afb::data j(afb::type_json_c(), d);
-	if (j)
-	{
-		r = reinterpret_cast<json_object *>(const_cast<void *>(*j));
-		r = json_object_get(r);
-	}
-	return r;
-}
-
-json_object *json_of_data(std::pair<unsigned, afb_data_t const *> dataset, unsigned index)
-{
-	return index < dataset.first ? json_of_data(dataset.second[index]) : nullptr;
-}
-
 afb::data json_to_req_data(afb::req req, json_object *obj)
 {
 	afb::data r(afb::type_json_c(), obj, 0,
 				reinterpret_cast<void (*)(void *)>(json_object_put),
 				reinterpret_cast<void *>(obj));
 	return r;
-}
-
-void reply_error(afb::req req, const char *text)
-{
-	afb::dataset<1> a;
-	a[0] = json_to_req_data(req, json_object_new_string(text));
-	req.reply(-1, a);
-}
-
-void send_data(void)
-{
-	// while (1)
-	// {
-	// 	afb::dataset<1> a;
-	// 	a[0] = "ok";
-	// 	data_event.push(a);
-	// 	TimeEv
-	// }
 }
 
 void timed_event(afb_timer_t timer, void *closure, int decount)
@@ -160,7 +125,7 @@ void subscribe(afb::req req, afb::received_data params)
 void unsubscribe(afb::req req, afb::received_data params)
 {
 	afb_timer_unref(timer);
-	AFB_ERROR("ok");
+	AFB_NOTICE("Unsubscribe");
 	req.unsubscribe(data_event);
 	req.reply();
 }
@@ -187,4 +152,4 @@ const afb_verb_t verbs[] = {
 	afb::verb<unsubscribe>("unsubscribe"),
 	afb::verbend()};
 
-const afb_binding_t afbBindingExport = afb::binding("sender-app", verbs, "Sender App for PoC", mainctl);
+const afb_binding_t afbBindingExport = afb::binding("release", verbs, "Release App for PoC", mainctl);
