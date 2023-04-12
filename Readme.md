@@ -11,16 +11,11 @@ wget -O - https://raw.githubusercontent.com/redpesk-devtools/redpesk-sdk-tools/m
 ```
 
 
-# build/launch hackaton sender before: follow its own readme
-
-```bash
-afb-binder --binding=./release.so --port 4442 -vvv --ws-server=unix:/tmp/release &
-afb-binder --binding=./shadow.so --port 4441 -vvv --ws-server=unix:/tmp/shadow &
-```
-
+# build/launch hackaton 
 
 ```
-cmake .
-make
-afb-binder --binding=./libcompare.so -vvv --ws-client=unix:/tmp/release --ws-client=unix:/tmp/shadow --port=11111
+mkdir -p build && cd build 
+cmake . && make
+
+afb-binder --config=hackaton.config -vvv
 ```
