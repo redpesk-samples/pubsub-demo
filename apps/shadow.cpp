@@ -21,6 +21,18 @@
 
 afb::event data_event;
 
+json_object *json_of_data(const afb::data &d)
+{
+	json_object *r = nullptr;
+	afb::data j(afb::type_json_c(), d);
+	if (j)
+	{
+		r = reinterpret_cast<json_object *>(const_cast<void *>(*j));
+		r = json_object_get(r);
+	}
+	return r;
+}
+
 afb::data json_to_req_data(afb::req req, json_object *obj)
 {
 	afb::data r(afb::type_json_c(), obj, 0,
@@ -53,9 +65,9 @@ void dispatch(void *closure, const char *event, unsigned n, afb_data_t const a[]
 	afb::received_data params(n, a);
 	r = json_of_data(params[0]);
 
-	afb::dataset<1> a;
-	a[0] = json_to_req_data(NULL, r);
-	data_event.push(a);
+	afb::dataset<1> dataset;
+	dataset[0] = json_to_req_data(NULL, r);
+	data_event.push(dataset);
 }
 
 int mainctl(afb_api_t api, afb_ctlid_t ctlid, afb_ctlarg_t ctlarg, void *userdata)
