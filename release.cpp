@@ -87,6 +87,8 @@ void timed_event(afb_timer_t timer, void *closure, int decount)
 
 	json_object *obj;
 
+	AFB_NOTICE("Sending (timestamp %d - Value %d)", da.time, da.value);
+
 	// create event data_csv
 	wrap_json_pack(&obj, "{si si}",
 				   "timestamp", da.time,
@@ -100,6 +102,7 @@ void subscribe(afb::req req, afb::received_data params)
 {
 	json_object *args, *val;
 	AFB_INFO("Subscribing");
+
 	req.subscribe(data_event);
 	req.reply();
 
@@ -110,16 +113,10 @@ void subscribe(afb::req req, afb::received_data params)
 		return;
 	}
 
-	// first = std::thread(send_data)
-
 	afb_timer_create(&timer,
 					 /*start:*/ 0 /*relative*/, 1 /*sec*/, 0 /*msec*/,
 					 /*occur:*/ 0 /*infinite*/, 1000 /*period msec*/, 10 /*accuracy msec*/,
 					 /*action:*/ timed_event, data_event, 0 /*no unref*/);
-
-	// afb::dataset<1> a;
-	// a[0] = json_to_req_data(req, json_object_new_string("ok"));
-	// data_event.push(a);
 }
 
 void unsubscribe(afb::req req, afb::received_data params)
