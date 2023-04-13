@@ -17,5 +17,5 @@ wget -O - https://raw.githubusercontent.com/redpesk-devtools/redpesk-sdk-tools/m
 mkdir -p build && cd build 
 cmake . && make
 
-afb-binder --config=hackaton.config -vvv
+bash launch.sh
 ```
