@@ -115,7 +115,7 @@ void subscribe(afb::req req, afb::received_data params)
 	afb_timer_create(&timer,
 					 /*start:*/ 0 /*relative*/, 1 /*sec*/, 0 /*msec*/,
 					 /*occur:*/ 0 /*infinite*/, 1000 /*period msec*/, 10 /*accuracy msec*/,
-					 /*action:*/ timed_event, data_event, 0 /*no unref*/);
+					 /*action:*/  (afb_timer_handler_t) timed_event, data_event, 0 /*no unref*/);
 
 	// afb::dataset<1> a;
 	// a[0] = json_to_req_data(req, json_object_new_string("ok"));
