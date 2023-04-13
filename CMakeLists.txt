@@ -6,7 +6,7 @@ find_package(PkgConfig REQUIRED)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-pkg_check_modules (AFBBINDING REQUIRED afb-binding) 
+pkg_check_modules (AFBBINDING REQUIRED afb-binding)
 include_directories(${AFBBINDING_INCLUDE_DIRS})
 link_libraries(${AFBBINDING_LDFLAGS})
 

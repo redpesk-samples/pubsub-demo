@@ -10,12 +10,19 @@ https://docs.redpesk.bzh/docs/en/master/getting_started/host-configuration/docs/
 wget -O - https://raw.githubusercontent.com/redpesk-devtools/redpesk-sdk-tools/master/install-redpesk-sdk.sh | bash
 ```
 
+# quick compilation + start
+```
+ ./start-demo.sh
+```
 
-# build/launch hackaton 
+
+# manual build/launch hackaton
 
 ```
-mkdir -p build && cd build 
-cmake . && make
+# compile sample
+mkdir -p build && cd build
+cmake .. && make
 
-bash launch.sh
+# start-demo
+afb-binder --config=hackaton.config -vvv
 ```
